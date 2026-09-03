@@ -6,6 +6,7 @@
     "gender": "男",
     "ethnicity": "汉族",
     "politicalStatus": "团员",
+    "householdLocation": "示例省 / 示例市 / 示例区",
     "email": "demo@example.com",
     "phone": "13800000000",
     "birthDate": "1990-01-01",

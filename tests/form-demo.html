@@ -48,6 +48,22 @@
       <label class="el-form-item__label">*民族</label>
       <div class="el-form-item__content"><div class="el-select" data-select="ethnicity"><input data-test="ethnicity" role="combobox" readonly placeholder="请选择"></div></div>
     </div>
+    <div class="el-form-item">
+      <label class="el-form-item__label">*政治面貌</label>
+      <div class="el-form-item__content">
+        <div class="el-select" data-select="political">
+          <div class="el-select__wrapper" data-test="political" role="combobox" tabindex="0"><span class="el-select__placeholder">请选择</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="el-form-item">
+      <label class="el-form-item__label">*户口所在地</label>
+      <div class="el-form-item__content">
+        <div class="el-cascader" data-select="household">
+          <div class="el-input__wrapper" data-test="household" tabindex="0"><span>请选择</span></div>
+        </div>
+      </div>
+    </div>
     <label>毕业院校<input name="school"></label>
     <label>专业名称<input name="major"></label>
     <label>求职意向<input name="targetRole"></label>
@@ -61,17 +77,47 @@
     <div class="el-select-dropdown__item" role="option">汉族</div>
     <div class="el-select-dropdown__item" role="option">蒙古族</div>
   </div>
+  <div class="el-select-dropdown" data-dropdown="political" hidden>
+    <div class="el-select-dropdown__item" role="option">群众</div>
+    <div class="el-select-dropdown__item" role="option">共青团员</div>
+    <div class="el-select-dropdown__item" role="option">中共党员</div>
+  </div>
+  <div class="el-cascader__dropdown" data-dropdown="household" hidden>
+    <div class="el-cascader-node" data-level="1">示例省</div>
+    <div class="el-cascader-node" data-level="2" hidden>示例市</div>
+    <div class="el-cascader-node" data-level="3" hidden>示例区</div>
+  </div>
   <script>
-    const ethnicityControl = document.querySelector('[data-select="ethnicity"]');
-    const ethnicityDropdown = document.querySelector('[data-dropdown="ethnicity"]');
-    ethnicityControl.addEventListener('click', () => { ethnicityDropdown.hidden = false; });
-    ethnicityDropdown.addEventListener('click', event => {
-      const option = event.target.closest('[role="option"]');
+    for (const name of ['ethnicity', 'political']) {
+      const control = document.querySelector(`[data-select="${name}"]`);
+      const dropdown = document.querySelector(`[data-dropdown="${name}"]`);
+      control.addEventListener('click', () => { dropdown.hidden = false; });
+      dropdown.addEventListener('click', event => {
+        const option = event.target.closest('[role="option"]');
+        if (!option) return;
+        const input = control.querySelector('input');
+        if (input) {
+          input.value = option.textContent.trim();
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+          control.querySelector('.el-select__wrapper').textContent = option.textContent.trim();
+        }
+        dropdown.hidden = true;
+      });
+    }
+    const householdControl = document.querySelector('[data-select="household"]');
+    const householdDropdown = document.querySelector('[data-dropdown="household"]');
+    householdControl.addEventListener('click', () => { householdDropdown.hidden = false; });
+    householdDropdown.addEventListener('click', event => {
+      const option = event.target.closest('.el-cascader-node');
       if (!option) return;
-      const input = ethnicityControl.querySelector('input');
-      input.value = option.textContent.trim();
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-      ethnicityDropdown.hidden = true;
+      const level = Number(option.dataset.level);
+      const next = householdDropdown.querySelector(`[data-level="${level + 1}"]`);
+      if (next) next.hidden = false;
+      else {
+        householdControl.querySelector('.el-input__wrapper').textContent = '示例省 / 示例市 / 示例区';
+        householdDropdown.hidden = true;
+      }
     });
   </script>
 </body>

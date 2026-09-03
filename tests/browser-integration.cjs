@@ -17,13 +17,15 @@ const { chromium } = require("playwright");
   await page.addScriptTag({ path: path.resolve(__dirname, "../extension/content.js") });
 
   const first = await page.evaluate(() => globalThis.__resumeAutofillRun({ includeSensitive: false, overwrite: false, highlight: false }));
-  assert.ok(first.filled >= 10, `expected at least 10 filled fields, got ${first.filled}`);
-  assert.ok(first.customFilled >= 2, `expected custom controls to be filled, got ${first.customFilled}`);
+  assert.ok(first.filled >= 12, `expected at least 12 filled fields, got ${first.filled}`);
+  assert.ok(first.customFilled >= 4, `expected custom controls to be filled, got ${first.customFilled}`);
   assert.equal(await page.locator('[data-test="candidate-name"]').inputValue(), "示例用户");
   assert.equal(await page.locator('[data-test="email"]').inputValue(), "demo@example.com");
   assert.equal(await page.locator('[name="enterpriseGender"]:checked').inputValue(), "男");
   assert.equal(await page.locator('[data-test="birth-date"]').inputValue(), "1990-01-01");
   assert.equal(await page.locator('[data-test="ethnicity"]').inputValue(), "汉族");
+  assert.equal((await page.locator('[data-test="political"]').textContent()).trim(), "共青团员");
+  assert.equal((await page.locator('[data-test="household"]').textContent()).trim(), "示例省 / 示例市 / 示例区");
   assert.equal(await page.locator('[name="major"]').inputValue(), "机械工程");
   assert.equal(await page.locator('[name="targetRole"]').inputValue(), "机械工程师");
   assert.equal(await page.locator('[name="idNumber"]').inputValue(), "");

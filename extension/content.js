@@ -22,10 +22,19 @@
     ".el-form-item__label", ".ant-form-item-label", ".ivu-form-item-label",
     ".arco-form-item-label", "[class*='form-item-label']", "[class*='formItemLabel']",
   ].join(",");
-  const CUSTOM_CONTROL_SELECTOR = [
+  const CUSTOM_CONTAINER_SELECTOR = [
     ".el-select", ".ant-select", ".ivu-select", ".arco-select",
     ".el-cascader", ".ant-cascader-picker", ".arco-cascader",
-    ".el-date-editor", ".ant-picker", "[role='combobox']"
+    ".el-date-editor", ".ant-picker"
+  ].join(",");
+  const CUSTOM_CONTROL_SELECTOR = [
+    CUSTOM_CONTAINER_SELECTOR, ".el-select__wrapper",
+    ".ant-select-selector", ".ivu-select-selection", ".arco-select-view",
+    ".el-cascader .el-input__wrapper", "[role='combobox']"
+  ].join(",");
+  const CUSTOM_INTERACTIVE_SELECTOR = [
+    "[role='combobox']", ".el-select__wrapper", ".ant-select-selector",
+    ".ivu-select-selection", ".arco-select-view", ".el-cascader .el-input__wrapper"
   ].join(",");
 
   function directLabelText(element) {
@@ -117,7 +126,7 @@
   }
 
   function customControlFor(element) {
-    return element.closest(CUSTOM_CONTROL_SELECTOR);
+    return element.closest(CUSTOM_CONTAINER_SELECTOR) || element.closest(CUSTOM_CONTROL_SELECTOR);
   }
 
   function usableControl(element) {
@@ -127,6 +136,16 @@
       return Boolean(wrapper && visible(wrapper));
     }
     return false;
+  }
+
+  function collectControls() {
+    const nativeControls = Array.from(document.querySelectorAll("input, textarea, select, [contenteditable='true']"));
+    const customControls = Array.from(document.querySelectorAll(CUSTOM_INTERACTIVE_SELECTOR)).filter(control => {
+      if (!visible(control) || control.matches("input, textarea, select")) return false;
+      const visibleNativeChild = Array.from(control.querySelectorAll("input, textarea, select")).some(usableControl);
+      return !visibleNativeChild;
+    });
+    return Array.from(new Set([...nativeControls, ...customControls]));
   }
 
   function dateLike(value, element, primary) {
@@ -158,10 +177,19 @@
 
   async function selectCustomOption(element, value) {
     const control = customControlFor(element) || element;
-    const clickTarget = control.querySelector("[role='combobox'], input") || control;
+    const interactiveCandidates = [
+      element,
+      ...Array.from(control.querySelectorAll(CUSTOM_INTERACTIVE_SELECTOR)),
+      ...Array.from(control.querySelectorAll("input")),
+      control
+    ];
+    const clickTarget = interactiveCandidates.find(candidate => candidate && visible(candidate)) || control;
+    if (typeof PointerEvent === "function") {
+      clickTarget.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, view: window, pointerType: "mouse" }));
+    }
     clickTarget.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
     clickTarget.click();
-    await wait(140);
+    await wait(220);
 
     const segments = String(value).split(/\s*[/／>＞]\s*/).map(part => part.trim()).filter(Boolean);
     for (const segment of segments.length ? segments : [String(value)]) {
@@ -174,9 +202,12 @@
       }
       if (!match) return false;
       match.scrollIntoView({ block: "nearest" });
+      if (typeof PointerEvent === "function") {
+        match.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, view: window, pointerType: "mouse" }));
+      }
       match.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
       match.click();
-      await wait(140);
+      await wait(180);
     }
     return true;
   }
@@ -243,7 +274,9 @@
   function currentValue(element) {
     if (element.type === "checkbox" || element.type === "radio") return element.checked ? "checked" : "";
     if (element.isContentEditable) return element.textContent || "";
-    return element.value || "";
+    if ("value" in element) return element.value || "";
+    const value = textOf(element);
+    return /^(请选择|请选择一项|pleaseselect|select)$/i.test(Core.normalizeText(value)) ? "" : value;
   }
 
   function highlight(element) {
@@ -262,7 +295,7 @@
     const stored = await chrome.storage.local.get(["profile"]);
     const profile = Core.deepMergeWithEmpty(stored.profile);
     const config = Object.assign({ includeSensitive: false, overwrite: false, highlight: true }, options || {});
-    const elements = Array.from(document.querySelectorAll("input, textarea, select, [contenteditable='true']"));
+    const elements = collectControls();
     const result = { filled: 0, customFilled: 0, skippedExisting: 0, matchedButUnsupported: 0, inspected: elements.length, frame: location.href };
     const radioGroups = new Set();
 
