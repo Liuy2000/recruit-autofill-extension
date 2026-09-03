@@ -27,6 +27,9 @@
     .area-selector-container { position: fixed; z-index: 12; left: 500px; top: 220px; width: 240px; padding: 10px; background: white; border: 1px solid #ccd6e0; box-shadow: 0 8px 20px #0002; }
     .area-item-container { padding: 5px; }
     .area-text-label, .icon-container { cursor: pointer; }
+    .phoenix-choice-panel { position: fixed; z-index: 13; left: 260px; top: 180px; width: 360px; padding: 12px; background: white; border: 1px solid #ccd6e0; box-shadow: 0 8px 20px #0002; }
+    .phoenix-radio-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .phoenix-radio { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -55,7 +58,7 @@
     </div>
     <div class="el-form-item">
       <label class="el-form-item__label">*民族</label>
-      <div class="el-form-item__content"><div class="el-select" data-select="ethnicity"><input data-test="ethnicity" role="combobox" readonly placeholder="请选择"></div></div>
+      <div class="el-form-item__content"><div class="phoenix-select" data-select="ethnicity"><div class="phoenix-select__placeHolder">请选择</div><input class="phoenix-select__input" data-test="ethnicity" readonly></div></div>
     </div>
     <div class="el-form-item">
       <label class="el-form-item__label">*政治面貌</label>
@@ -89,9 +92,13 @@
     <label>已存在内容（默认不覆盖）<input aria-label="姓名" value="保留此内容"></label>
     <label>简历附件（永不填写）<input type="file"></label>
   </form>
-  <div class="el-select-dropdown" data-dropdown="ethnicity" hidden>
-    <div class="el-select-dropdown__item" role="option">汉族</div>
-    <div class="el-select-dropdown__item" role="option">蒙古族</div>
+  <div class="phoenix-choice-panel" data-dropdown="ethnicity" hidden>
+    <div class="phoenix-radio-group">
+      <div class="phoenix-radio-group__radioItem"><div class="phoenix-radio">汉族</div></div>
+      <div class="phoenix-radio-group__radioItem"><div class="phoenix-radio">回族</div></div>
+      <div class="phoenix-radio-group__radioItem"><div class="phoenix-radio">蒙古族</div></div>
+    </div>
+    <button type="button">取消</button><button type="button" data-choice-confirm>确定</button>
   </div>
   <div class="el-select-dropdown" data-dropdown="political" hidden>
     <div class="el-select-dropdown__item" role="option">群众</div>
@@ -112,7 +119,7 @@
     </ul>
   </div>
   <script>
-    for (const name of ['ethnicity', 'political']) {
+    for (const name of ['political']) {
       const control = document.querySelector(`[data-select="${name}"]`);
       const dropdown = document.querySelector(`[data-dropdown="${name}"]`);
       control.addEventListener('click', () => { dropdown.hidden = false; });
@@ -129,6 +136,19 @@
         dropdown.hidden = true;
       });
     }
+    const ethnicityControl = document.querySelector('[data-select="ethnicity"]');
+    const ethnicityDropdown = document.querySelector('[data-dropdown="ethnicity"]');
+    let ethnicityPending = '';
+    ethnicityControl.addEventListener('click', () => { ethnicityDropdown.hidden = false; });
+    ethnicityDropdown.addEventListener('click', event => {
+      const radio = event.target.closest('.phoenix-radio');
+      if (radio) ethnicityPending = radio.textContent.trim();
+      if (event.target.closest('[data-choice-confirm]')) {
+        ethnicityControl.querySelector('input').value = ethnicityPending;
+        ethnicityControl.querySelector('.phoenix-select__placeHolder').textContent = ethnicityPending;
+        ethnicityDropdown.hidden = true;
+      }
+    });
     const householdControl = document.querySelector('[data-select="household"]');
     const householdDropdown = document.querySelector('[data-dropdown="household"]');
     householdControl.addEventListener('click', () => { householdDropdown.hidden = false; });
@@ -144,7 +164,7 @@
       const level = Number(item.dataset.level);
       if (event.target.closest('.icon-container')) householdSelected = true;
       const next = householdDropdown.querySelector(`[data-level="${level + 1}"]`);
-      if (next) next.hidden = false;
+      if (next) setTimeout(() => { next.hidden = false; }, 650);
     });
     const educationControl = document.querySelector('[data-select="education"]');
     const educationDropdown = document.querySelector('[data-dropdown="education"]');

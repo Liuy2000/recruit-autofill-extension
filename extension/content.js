@@ -163,7 +163,8 @@
       ".el-select-dropdown__item", ".el-cascader-node", ".ant-select-item-option",
       ".ant-cascader-menu-item", ".ivu-select-item", ".arco-select-option",
       ".arco-cascader-option", ".phoenix-single-select-list__item",
-      ".phoenix-selectList__listItem", "[role='option']", "[role='menuitemradio']"
+      ".phoenix-selectList__listItem", ".phoenix-radio-group__radioItem",
+      "[role='option']", "[role='menuitemradio']"
     ].join(",");
     return Array.from(document.querySelectorAll(selectors)).filter(option => {
       const disabled = option.getAttribute("aria-disabled") === "true" || /disabled/i.test(String(option.className || ""));
@@ -180,18 +181,32 @@
       });
   }
 
+  async function waitForBestOption(getOptions, desiredValue, timeout = 3200) {
+    const deadline = Date.now() + timeout;
+    do {
+      const match = bestOption(getOptions(), desiredValue);
+      if (match) return match;
+      await wait(120);
+    } while (Date.now() < deadline);
+    return null;
+  }
+
+  function visibleConfirmButton() {
+    return Array.from(document.querySelectorAll("button")).filter(visible).find(button =>
+      /^(确定|提交|完成|confirm|submit|ok)$/i.test(Core.normalizeText(textOf(button)))
+    );
+  }
+
   async function selectBeisenArea(value, areaPanel) {
     const segments = String(value).split(/\s*[/／>＞,，]\s*/).map(part => part.trim()).filter(Boolean);
     if (!segments.length) return false;
 
     for (let index = 0; index < segments.length; index += 1) {
-      let labels = Array.from(areaPanel.querySelectorAll(".area-text-label")).filter(visible);
-      let match = bestOption(labels, segments[index]);
-      if (!match) {
-        await wait(240);
-        labels = Array.from(areaPanel.querySelectorAll(".area-text-label")).filter(visible);
-        match = bestOption(labels, segments[index]);
-      }
+      const match = await waitForBestOption(
+        () => Array.from(areaPanel.querySelectorAll(".area-text-label")).filter(visible),
+        segments[index],
+        4500
+      );
       if (!match) return false;
 
       if (index < segments.length - 1) {
@@ -203,7 +218,7 @@
         if (typeof target.click === "function") target.click();
         else target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
       }
-      await wait(240);
+      await wait(180);
     }
 
     const buttons = Array.from(areaPanel.querySelectorAll("button")).filter(visible);
@@ -235,22 +250,25 @@
     if (areaPanel) return selectBeisenArea(value, areaPanel);
 
     const segments = String(value).split(/\s*[/／>＞]\s*/).map(part => part.trim()).filter(Boolean);
+    let lastMatch = null;
     for (const segment of segments.length ? segments : [String(value)]) {
-      let options = visibleOptions();
-      let match = bestOption(options, segment);
-      if (!match) {
-        await wait(180);
-        options = visibleOptions();
-        match = bestOption(options, segment);
-      }
+      const match = await waitForBestOption(visibleOptions, segment);
       if (!match) return false;
+      lastMatch = match;
       match.scrollIntoView({ block: "nearest" });
       if (typeof PointerEvent === "function") {
         match.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, view: window, pointerType: "mouse" }));
       }
-      match.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
-      match.click();
+      const optionTarget = match.querySelector(".phoenix-radio") || match;
+      optionTarget.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
+      optionTarget.click();
       await wait(180);
+    }
+    if (lastMatch && lastMatch.matches(".phoenix-radio-group__radioItem")) {
+      const confirm = visibleConfirmButton();
+      if (!confirm) return false;
+      confirm.click();
+      await wait(220);
     }
     return true;
   }

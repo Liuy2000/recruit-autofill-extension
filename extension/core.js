@@ -189,6 +189,7 @@
     rule("education.0.startDate", ["入学时间", "入学日期", "education start date"]),
     rule("education.0.endDate", ["教育毕业时间", "预计毕业时间", "education end date"]),
     rule("education.0.schoolType", ["最高学历毕业院校类型", "毕业院校类型", "学校类型"]),
+    rule(["education.1.schoolType", "education.0.schoolType"], ["第一学历毕业院校类型", "第一学历院校类型"]),
     rule("education.0.courses", ["专业课程", "核心课程", "主修课程", "relevant coursework"]),
     rule("projects.0.name", ["项目名称", "科研项目名称", "project name"]),
     rule("projects.0.role", ["项目职务", "项目角色", "project role"]),

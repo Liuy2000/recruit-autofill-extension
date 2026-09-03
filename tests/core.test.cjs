@@ -11,7 +11,10 @@ profile.personal = {
   graduationSchool: "示例大学"
 };
 profile.emergencyContact = { name: "示例联系人", phone: "13900000000" };
-profile.education = [{ school: "示例大学", major: "机械工程" }];
+profile.education = [
+  { school: "示例大学", major: "机械工程", schoolType: "示例最高学历院校类型" },
+  { school: "示例本科院校", schoolType: "示例第一学历院校类型" }
+];
 
 assert.equal(Core.findBestRule("姓名", "个人信息 姓名", profile, false).value, "示例用户");
 assert.equal(Core.findBestRule("联系邮箱", "个人信息 联系邮箱", profile, false).value, "demo@example.com");
@@ -22,6 +25,8 @@ assert.equal(Core.findBestRule("身份证号码", "证件信息 身份证号码"
 assert.equal(Core.findBestRule("学校名称", "教育背景 学校名称", profile, false).value, "示例大学");
 assert.equal(Core.findBestRule("专业名称", "教育背景 专业名称", profile, false).value, "机械工程");
 assert.equal(Core.findBestRule("联系电话", "紧急联系人 联系电话", profile, true).value, "13900000000");
+assert.equal(Core.findBestRule("最高学历毕业院校类型", "个人信息 最高学历毕业院校类型", profile, false).value, "示例最高学历院校类型");
+assert.equal(Core.findBestRule("第一学历毕业院校类型", "个人信息 第一学历毕业院校类型", profile, false).value, "示例第一学历院校类型");
 
 const merged = Core.deepMergeWithEmpty({ personal: { fullName: "示例用户" } });
 assert.deepEqual(merged.projects, []);
