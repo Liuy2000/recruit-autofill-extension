@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>个人资料设置 - 招聘简历自动填写助手</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark">简</span>
+      <div><h1>个人资料设置</h1><p>所有资料仅保存在当前浏览器本地</p></div>
+    </div>
+    <div class="toolbar">
+      <button id="importButton" class="ghost">导入 JSON / CSV</button>
+      <button id="exportJson" class="ghost">导出 JSON</button>
+      <button id="exportCsv" class="ghost">导出 Excel CSV</button>
+      <button id="saveButton" class="primary">保存资料</button>
+      <input id="fileInput" type="file" accept=".json,.csv,application/json,text/csv" hidden>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <div class="privacy-card">
+        <strong>隐私保护</strong>
+        <p>扩展不联网、不上传资料、不自动提交表单。敏感字段默认关闭。</p>
+      </div>
+      <nav id="navigation"></nav>
+      <button id="resetButton" class="danger-link">清空全部资料</button>
+    </aside>
+    <div id="editor" class="editor"></div>
+  </main>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="core.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
+

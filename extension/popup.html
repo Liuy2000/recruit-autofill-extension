@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>招聘简历自动填写助手</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <span class="mark">简</span>
+      <div>
+        <h1>简历自动填写</h1>
+        <p id="profileSummary">正在读取本地资料…</p>
+      </div>
+    </header>
+
+    <section class="notice">
+      <strong>只填写，不提交</strong>
+      <span>提交前请逐项核对，网站的自定义下拉框可能仍需手动选择。</span>
+    </section>
+
+    <label class="switch-row">
+      <span><strong>允许填写敏感字段</strong><small>身份证、紧急联系人、家庭成员</small></span>
+      <input id="includeSensitive" type="checkbox">
+    </label>
+    <label class="switch-row">
+      <span><strong>覆盖已有内容</strong><small>默认保留网站中已填写的值</small></span>
+      <input id="overwrite" type="checkbox">
+    </label>
+    <label class="switch-row">
+      <span><strong>高亮本次填写项</strong><small>用绿色边框短暂标出</small></span>
+      <input id="highlight" type="checkbox" checked>
+    </label>
+
+    <button id="fillButton" class="primary">填写当前页面</button>
+    <button id="openOptions" class="secondary">修改 / 导入个人资料</button>
+    <div id="result" role="status" aria-live="polite"></div>
+  </main>
+  <script src="core.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
+

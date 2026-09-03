@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "招聘简历自动填写助手",
+  "version": "1.0.0",
+  "description": "在招聘网站表单中按需填写本地保存的简历资料，不联网、不自动提交。",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_title": "填写当前招聘表单",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html"
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-03T00:00:00Z",
+  "personal": {
+    "fullName": "示例用户",
+    "gender": "男",
+    "email": "demo@example.com",
+    "phone": "13800000000",
+    "birthDate": "1990-01-01",
+    "idNumber": "TEST-ID-0001",
+    "graduationSchool": "示例大学",
+    "selfIntroduction": "这是用于自动化测试的虚构资料，不对应任何真实个人。"
+  },
+  "jobIntent": {
+    "targetRole": "机械工程师"
+  },
+  "emergencyContact": {
+    "name": "示例联系人",
+    "relationship": "亲属",
+    "phone": "13900000000"
+  },
+  "skills": {},
+  "education": [
+    {
+      "school": "示例大学",
+      "major": "机械工程"
+    }
+  ],
+  "projects": [],
+  "internships": [],
+  "languages": [],
+  "awards": [],
+  "family": []
+}
+

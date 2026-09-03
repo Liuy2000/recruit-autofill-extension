@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Core tests
+        run: node tests/core.test.cjs
+      - name: JavaScript syntax
+        run: |
+          node --check extension/background.js
+          node --check extension/core.js
+          node --check extension/content.js
+          node --check extension/popup.js
+          node --check extension/options.js
+      - name: Validate JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('extension/manifest.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('fixtures/sample-profile.json','utf8'))"
+      - name: Confirm private data is absent
+        run: test ! -d private
+

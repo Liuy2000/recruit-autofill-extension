@@ -1,0 +1,5 @@
+private/*.json
+private/*.csv
+dist/
+tmp/
+
