@@ -5,6 +5,7 @@ main { padding: 18px; }
 header { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
 .mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg,#174a7e,#176b68); color: white; font-size: 22px; font-weight: 800; box-shadow: 0 8px 20px #174a7e2b; }
 h1 { margin: 0 0 3px; font-size: 19px; letter-spacing: .02em; }
+h1 small { color: #76869a; font-size: 10px; font-weight: 600; }
 header p { margin: 0; color: #64748b; font-size: 12px; }
 .notice { padding: 12px; border: 1px solid #cce7e4; border-radius: 12px; background: #effcf9; display: grid; gap: 4px; margin-bottom: 12px; }
 .notice strong { color: #0f766e; font-size: 13px; }
@@ -24,4 +25,3 @@ button:disabled { opacity: .55; cursor: wait; }
 #result { min-height: 18px; margin-top: 10px; font-size: 12px; line-height: 1.5; color: #475569; text-align: center; }
 #result.error { color: #b42318; }
 #result.success { color: #0f766e; }
-

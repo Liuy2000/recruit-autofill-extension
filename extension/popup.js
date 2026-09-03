@@ -7,6 +7,7 @@
   const includeSensitive = document.getElementById("includeSensitive");
   const overwrite = document.getElementById("overwrite");
   const highlight = document.getElementById("highlight");
+  document.getElementById("version").textContent = `v${chrome.runtime.getManifest().version}`;
 
   const stored = await chrome.storage.local.get(["profile", "popupSettings"]);
   const profile = Core.deepMergeWithEmpty(stored.profile);

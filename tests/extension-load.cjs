@@ -34,6 +34,10 @@ const profile = require("../fixtures/sample-profile.json");
   await page.reload();
   await page.waitForSelector("#field-personal-fullName");
   assert.equal(await page.locator("#field-personal-fullName").inputValue(), "示例用户");
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.waitForSelector("#version");
+  assert.equal(await popup.locator("#version").textContent(), "v1.0.3");
   await context.close();
   console.log(`extension load test passed (${extensionId})`);
 })().catch(error => {

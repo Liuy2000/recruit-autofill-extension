@@ -18,6 +18,15 @@
     .el-select-dropdown { position: fixed; z-index: 10; left: 340px; top: 250px; width: 180px; padding: 6px; background: white; border: 1px solid #ccd6e0; box-shadow: 0 8px 20px #0002; }
     .el-select-dropdown__item { padding: 7px 9px; cursor: pointer; }
     .el-select-dropdown__item:hover { background: #eef8f6; }
+    .phoenix-select { position: relative; min-height: 38px; padding: 8px 30px 8px 10px; border: 1px solid #ccd6e0; cursor: pointer; }
+    .phoenix-select__content { margin: 0; padding: 0; list-style: none; }
+    .phoenix-select__input { width: 100%; padding: 0; border: 0; outline: 0; color: transparent; cursor: pointer; }
+    .phoenix-select-dropdown { position: fixed; z-index: 11; left: 540px; top: 330px; width: 180px; padding: 6px; background: white; border: 1px solid #ccd6e0; box-shadow: 0 8px 20px #0002; }
+    .phoenix-single-select-list__item { padding: 7px 9px; cursor: pointer; }
+    .field-search { min-height: 38px; padding: 8px 30px 8px 10px; border: 1px solid #ccd6e0; cursor: pointer; }
+    .area-selector-container { position: fixed; z-index: 12; left: 500px; top: 220px; width: 240px; padding: 10px; background: white; border: 1px solid #ccd6e0; box-shadow: 0 8px 20px #0002; }
+    .area-item-container { padding: 5px; }
+    .area-text-label, .icon-container { cursor: pointer; }
   </style>
 </head>
 <body>
@@ -56,11 +65,18 @@
         </div>
       </div>
     </div>
-    <div class="el-form-item">
-      <label class="el-form-item__label">*户口所在地</label>
-      <div class="el-form-item__content">
-        <div class="el-cascader" data-select="household">
-          <div class="el-input__wrapper" data-test="household" tabindex="0"><span>请选择</span></div>
+    <div class="form-item form-item--phoenix">
+      <div class="form-item__title"><label class="form-item__text">*户口所在地</label></div>
+      <div class="form-item__control">
+        <div class="field field-search" data-select="household" data-test="household" tabindex="0">请选择</div>
+      </div>
+    </div>
+    <div class="form-item form-item--phoenix">
+      <div class="form-item__title"><label class="form-item__text">*最高学历</label></div>
+      <div class="form-item__control">
+        <div class="phoenix-select phoenix-select--editable" data-select="education">
+          <div class="phoenix-select__placeHolder phoenix-select__placeHolder--show" data-test="education">请选择</div>
+          <ul class="phoenix-select__content"><li class="phoenix-select__inputWrapper"><input class="phoenix-select__input phoenix-select__input--unText"></li></ul>
         </div>
       </div>
     </div>
@@ -82,10 +98,18 @@
     <div class="el-select-dropdown__item" role="option">共青团员</div>
     <div class="el-select-dropdown__item" role="option">中共党员</div>
   </div>
-  <div class="el-cascader__dropdown" data-dropdown="household" hidden>
-    <div class="el-cascader-node" data-level="1">示例省</div>
-    <div class="el-cascader-node" data-level="2" hidden>示例市</div>
-    <div class="el-cascader-node" data-level="3" hidden>示例区</div>
+  <div class="area-selector-container" data-dropdown="household" hidden>
+    <div class="area-item-container" data-level="1"><span class="area-text-label">示例省</span></div>
+    <div class="area-item-container" data-level="2" hidden><span class="area-text-label">示例市</span></div>
+    <div class="area-item-container" data-level="3" hidden><span class="icon-container"><svg class="area-icon-RadioUnchecked" width="12" height="12"></svg></span><span class="area-text-label">示例区</span></div>
+    <div class="area-footer-button"><div class="button-container"><button type="button">取消</button></div><div class="button-container"><button type="button" data-area-confirm>提交</button></div></div>
+  </div>
+  <div class="phoenix-container__dropdown phoenix-select-dropdown" data-dropdown="education" hidden>
+    <ul class="phoenix-single-select-list__ul">
+      <li class="phoenix-single-select-list__item">大学本科</li>
+      <li class="phoenix-single-select-list__item">硕士研究生</li>
+      <li class="phoenix-single-select-list__item">博士研究生</li>
+    </ul>
   </div>
   <script>
     for (const name of ['ethnicity', 'political']) {
@@ -108,16 +132,32 @@
     const householdControl = document.querySelector('[data-select="household"]');
     const householdDropdown = document.querySelector('[data-dropdown="household"]');
     householdControl.addEventListener('click', () => { householdDropdown.hidden = false; });
+    let householdSelected = false;
     householdDropdown.addEventListener('click', event => {
-      const option = event.target.closest('.el-cascader-node');
-      if (!option) return;
-      const level = Number(option.dataset.level);
+      const item = event.target.closest('[data-level]');
+      if (event.target.closest('[data-area-confirm]')) {
+        if (householdSelected) householdControl.textContent = '示例省 / 示例市 / 示例区';
+        householdDropdown.hidden = true;
+        return;
+      }
+      if (!item) return;
+      const level = Number(item.dataset.level);
+      if (event.target.closest('.icon-container')) householdSelected = true;
       const next = householdDropdown.querySelector(`[data-level="${level + 1}"]`);
       if (next) next.hidden = false;
-      else {
-        householdControl.querySelector('.el-input__wrapper').textContent = '示例省 / 示例市 / 示例区';
-        householdDropdown.hidden = true;
-      }
+    });
+    const educationControl = document.querySelector('[data-select="education"]');
+    const educationDropdown = document.querySelector('[data-dropdown="education"]');
+    educationControl.addEventListener('click', () => { educationDropdown.hidden = false; });
+    educationDropdown.addEventListener('click', event => {
+      const option = event.target.closest('.phoenix-single-select-list__item');
+      if (!option) return;
+      const value = option.textContent.trim();
+      educationControl.querySelector('.phoenix-select__placeHolder').textContent = value;
+      const input = educationControl.querySelector('input');
+      input.value = value;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      educationDropdown.hidden = true;
     });
   </script>
 </body>

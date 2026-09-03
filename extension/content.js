@@ -25,7 +25,7 @@
   const CUSTOM_CONTAINER_SELECTOR = [
     ".el-select", ".ant-select", ".ivu-select", ".arco-select",
     ".el-cascader", ".ant-cascader-picker", ".arco-cascader",
-    ".el-date-editor", ".ant-picker"
+    ".el-date-editor", ".ant-picker", ".phoenix-select", ".field-search"
   ].join(",");
   const CUSTOM_CONTROL_SELECTOR = [
     CUSTOM_CONTAINER_SELECTOR, ".el-select__wrapper",
@@ -34,7 +34,8 @@
   ].join(",");
   const CUSTOM_INTERACTIVE_SELECTOR = [
     "[role='combobox']", ".el-select__wrapper", ".ant-select-selector",
-    ".ivu-select-selection", ".arco-select-view", ".el-cascader .el-input__wrapper"
+    ".ivu-select-selection", ".arco-select-view", ".el-cascader .el-input__wrapper",
+    ".phoenix-select", ".field-search"
   ].join(",");
 
   function directLabelText(element) {
@@ -45,7 +46,10 @@
       if (node) parts.push(textOf(node));
     }
 
-    const formItem = element.closest(FORM_ITEM_SELECTOR);
+    let formItem = element.closest(FORM_ITEM_SELECTOR);
+    if (formItem === element && element.parentElement) {
+      formItem = element.parentElement.closest(FORM_ITEM_SELECTOR) || formItem;
+    }
     if (formItem) {
       let labels = Array.from(formItem.querySelectorAll(FORM_LABEL_SELECTOR));
       if (!labels.length) {
@@ -158,7 +162,8 @@
     const selectors = [
       ".el-select-dropdown__item", ".el-cascader-node", ".ant-select-item-option",
       ".ant-cascader-menu-item", ".ivu-select-item", ".arco-select-option",
-      ".arco-cascader-option", "[role='option']", "[role='menuitemradio']"
+      ".arco-cascader-option", ".phoenix-single-select-list__item",
+      ".phoenix-selectList__listItem", "[role='option']", "[role='menuitemradio']"
     ].join(",");
     return Array.from(document.querySelectorAll(selectors)).filter(option => {
       const disabled = option.getAttribute("aria-disabled") === "true" || /disabled/i.test(String(option.className || ""));
@@ -173,6 +178,41 @@
         const optionText = Core.normalizeText(textOf(option));
         return optionText && (optionText.includes(desired) || desired.includes(optionText));
       });
+  }
+
+  async function selectBeisenArea(value, areaPanel) {
+    const segments = String(value).split(/\s*[/／>＞,，]\s*/).map(part => part.trim()).filter(Boolean);
+    if (!segments.length) return false;
+
+    for (let index = 0; index < segments.length; index += 1) {
+      let labels = Array.from(areaPanel.querySelectorAll(".area-text-label")).filter(visible);
+      let match = bestOption(labels, segments[index]);
+      if (!match) {
+        await wait(240);
+        labels = Array.from(areaPanel.querySelectorAll(".area-text-label")).filter(visible);
+        match = bestOption(labels, segments[index]);
+      }
+      if (!match) return false;
+
+      if (index < segments.length - 1) {
+        match.click();
+      } else {
+        const item = match.closest(".area-item-container");
+        const choice = item && item.querySelector(".icon-container [class*='Unchecked'], .icon-container svg, .icon-container > *");
+        const target = choice || match;
+        if (typeof target.click === "function") target.click();
+        else target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+      }
+      await wait(240);
+    }
+
+    const buttons = Array.from(areaPanel.querySelectorAll("button")).filter(visible);
+    const confirm = areaPanel.querySelector(".area-footer-button .button-container:last-child button")
+      || buttons.find(button => /^(确定|提交|完成|confirm|submit|ok)$/i.test(Core.normalizeText(textOf(button))));
+    if (!confirm) return false;
+    confirm.click();
+    await wait(220);
+    return true;
   }
 
   async function selectCustomOption(element, value) {
@@ -190,6 +230,9 @@
     clickTarget.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
     clickTarget.click();
     await wait(220);
+
+    const areaPanel = Array.from(document.querySelectorAll(".area-selector-container")).find(visible);
+    if (areaPanel) return selectBeisenArea(value, areaPanel);
 
     const segments = String(value).split(/\s*[/／>＞]\s*/).map(part => part.trim()).filter(Boolean);
     for (const segment of segments.length ? segments : [String(value)]) {
@@ -256,7 +299,7 @@
       return { changed: Core.normalizeText(element.value) === Core.normalizeText(finalValue), kind: customControl ? "custom" : "text" };
     }
 
-    if (customControl && (element.readOnly || /select|cascader|combobox/i.test(`${customControl.className || ""} ${element.getAttribute("role") || ""}`))) {
+    if (customControl && (element.readOnly || /select|cascader|combobox|field-search/i.test(`${customControl.className || ""} ${element.getAttribute("role") || ""}`))) {
       const selected = await selectCustomOption(element, value);
       return { changed: selected, kind: "custom" };
     }
