@@ -47,15 +47,19 @@
       const totals = reports.reduce((acc, item) => {
         const value = item || {};
         acc.filled += Number(value.filled || 0);
+        acc.customFilled += Number(value.customFilled || 0);
         acc.skippedExisting += Number(value.skippedExisting || 0);
+        acc.matchedButUnsupported += Number(value.matchedButUnsupported || 0);
         acc.inspected += Number(value.inspected || 0);
         return acc;
-      }, { filled: 0, skippedExisting: 0, inspected: 0 });
+      }, { filled: 0, customFilled: 0, skippedExisting: 0, matchedButUnsupported: 0, inspected: 0 });
       if (totals.filled) {
-        result.textContent = `已填写 ${totals.filled} 项${totals.skippedExisting ? `，保留已有内容 ${totals.skippedExisting} 项` : ""}。请核对后再提交。`;
+        result.textContent = `已填写 ${totals.filled} 项${totals.customFilled ? `（含自定义组件 ${totals.customFilled} 项）` : ""}${totals.skippedExisting ? `，保留已有内容 ${totals.skippedExisting} 项` : ""}。请核对后再提交。`;
         result.className = "success";
       } else {
-        result.textContent = totals.inspected ? "未找到可高置信匹配的空白字段。可在设置中补充资料，或手动填写自定义组件。" : "当前页面没有可访问的表单字段。";
+        result.textContent = totals.matchedButUnsupported
+          ? `识别到 ${totals.matchedButUnsupported} 个字段，但页面组件暂不接受自动赋值。`
+          : totals.inspected ? "未找到可高置信匹配的空白字段。可在设置中补充资料。" : "当前页面没有可访问的表单字段。";
       }
     } catch (error) {
       result.textContent = /Cannot access|chrome:\/\/|edge:\/\//i.test(error.message)
@@ -68,4 +72,3 @@
     }
   });
 })();
-

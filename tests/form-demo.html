@@ -8,17 +8,46 @@
     form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     label { display: grid; gap: 6px; } input,select,textarea { padding: 9px; } textarea { min-height: 90px; }
     .wide { grid-column: 1/-1; }
+    .el-form-item { display: grid; grid-template-columns: 100px 1fr; align-items: center; gap: 8px; }
+    .el-form-item__label { display: block; }
+    .el-form-item__content, .el-input, .el-select, .el-date-editor { min-width: 0; }
+    .el-form-item input { width: 100%; }
+    .el-radio { display: inline-flex; align-items: center; margin-right: 14px; cursor: pointer; }
+    .el-radio input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .el-radio input:checked + span { color: #0f766e; font-weight: 700; }
+    .el-select-dropdown { position: fixed; z-index: 10; left: 340px; top: 250px; width: 180px; padding: 6px; background: white; border: 1px solid #ccd6e0; box-shadow: 0 8px 20px #0002; }
+    .el-select-dropdown__item { padding: 7px 9px; cursor: pointer; }
+    .el-select-dropdown__item:hover { background: #eef8f6; }
   </style>
 </head>
 <body>
   <h1>招聘表单测试页</h1>
   <p>加载扩展并导入资料后，在本页点击“填写当前页面”。本页没有提交逻辑。</p>
   <form>
-    <label>姓名<input name="candidateName"></label>
-    <label>性别<select name="gender"><option value="">请选择</option><option>男</option><option>女</option></select></label>
-    <label>联系邮箱<input type="email" name="email"></label>
+    <div class="el-form-item">
+      <label class="el-form-item__label">*姓名</label>
+      <div class="el-form-item__content"><div class="el-input"><input data-test="candidate-name" placeholder="请输入"></div></div>
+    </div>
+    <div class="el-form-item">
+      <label class="el-form-item__label">*性别</label>
+      <div class="el-form-item__content">
+        <label class="el-radio"><input type="radio" name="enterpriseGender" value="男"><span>男</span></label>
+        <label class="el-radio"><input type="radio" name="enterpriseGender" value="女"><span>女</span></label>
+      </div>
+    </div>
+    <div class="el-form-item">
+      <label class="el-form-item__label">*邮箱</label>
+      <div class="el-form-item__content"><div class="el-input"><input data-test="email" type="email" placeholder="请输入"></div></div>
+    </div>
     <label>手机号码<input type="tel" name="mobile"></label>
-    <label>出生日期<input type="date" name="birthDate"></label>
+    <div class="el-form-item">
+      <label class="el-form-item__label">*出生日期</label>
+      <div class="el-form-item__content"><div class="el-date-editor"><input data-test="birth-date" readonly placeholder="请选择"></div></div>
+    </div>
+    <div class="el-form-item">
+      <label class="el-form-item__label">*民族</label>
+      <div class="el-form-item__content"><div class="el-select" data-select="ethnicity"><input data-test="ethnicity" role="combobox" readonly placeholder="请选择"></div></div>
+    </div>
     <label>毕业院校<input name="school"></label>
     <label>专业名称<input name="major"></label>
     <label>求职意向<input name="targetRole"></label>
@@ -28,6 +57,22 @@
     <label>已存在内容（默认不覆盖）<input aria-label="姓名" value="保留此内容"></label>
     <label>简历附件（永不填写）<input type="file"></label>
   </form>
+  <div class="el-select-dropdown" data-dropdown="ethnicity" hidden>
+    <div class="el-select-dropdown__item" role="option">汉族</div>
+    <div class="el-select-dropdown__item" role="option">蒙古族</div>
+  </div>
+  <script>
+    const ethnicityControl = document.querySelector('[data-select="ethnicity"]');
+    const ethnicityDropdown = document.querySelector('[data-dropdown="ethnicity"]');
+    ethnicityControl.addEventListener('click', () => { ethnicityDropdown.hidden = false; });
+    ethnicityDropdown.addEventListener('click', event => {
+      const option = event.target.closest('[role="option"]');
+      if (!option) return;
+      const input = ethnicityControl.querySelector('input');
+      input.value = option.textContent.trim();
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      ethnicityDropdown.hidden = true;
+    });
+  </script>
 </body>
 </html>
-

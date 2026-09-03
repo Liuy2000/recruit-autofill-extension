@@ -4,11 +4,14 @@
   "personal": {
     "fullName": "示例用户",
     "gender": "男",
+    "ethnicity": "汉族",
+    "politicalStatus": "团员",
     "email": "demo@example.com",
     "phone": "13800000000",
     "birthDate": "1990-01-01",
     "idNumber": "TEST-ID-0001",
     "graduationSchool": "示例大学",
+    "highestEducation": "硕士研究生",
     "selfIntroduction": "这是用于自动化测试的虚构资料，不对应任何真实个人。"
   },
   "jobIntent": {
@@ -32,4 +35,3 @@
   "awards": [],
   "family": []
 }
-
