@@ -164,6 +164,7 @@
       ".ant-cascader-menu-item", ".ivu-select-item", ".arco-select-option",
       ".arco-cascader-option", ".phoenix-single-select-list__item",
       ".phoenix-selectList__listItem", ".phoenix-radio-group__radioItem",
+      ".phoenix-radio",
       "[role='option']", "[role='menuitemradio']"
     ].join(",");
     return Array.from(document.querySelectorAll(selectors)).filter(option => {
@@ -191,8 +192,8 @@
     return null;
   }
 
-  function visibleConfirmButton() {
-    return Array.from(document.querySelectorAll("button")).filter(visible).find(button =>
+  function visibleConfirmButton(scope = document) {
+    return Array.from(scope.querySelectorAll("button, [role='button'], .phoenix-button")).filter(visible).find(button =>
       /^(确定|提交|完成|confirm|submit|ok)$/i.test(Core.normalizeText(textOf(button)))
     );
   }
@@ -221,8 +222,9 @@
       await wait(180);
     }
 
-    const buttons = Array.from(areaPanel.querySelectorAll("button")).filter(visible);
+    const buttons = Array.from(areaPanel.querySelectorAll("button, [role='button'], .phoenix-button")).filter(visible);
     const confirm = areaPanel.querySelector(".area-footer-button .button-container:last-child button")
+      || visibleConfirmButton(areaPanel)
       || buttons.find(button => /^(确定|提交|完成|confirm|submit|ok)$/i.test(Core.normalizeText(textOf(button))));
     if (!confirm) return false;
     confirm.click();
@@ -259,12 +261,12 @@
       if (typeof PointerEvent === "function") {
         match.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, view: window, pointerType: "mouse" }));
       }
-      const optionTarget = match.querySelector(".phoenix-radio") || match;
+      const optionTarget = match.matches(".phoenix-radio") ? match : match.querySelector(".phoenix-radio") || match;
       optionTarget.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
       optionTarget.click();
       await wait(180);
     }
-    if (lastMatch && lastMatch.matches(".phoenix-radio-group__radioItem")) {
+    if (lastMatch && lastMatch.matches(".phoenix-radio-group__radioItem, .phoenix-radio")) {
       const confirm = visibleConfirmButton();
       if (!confirm) return false;
       confirm.click();
