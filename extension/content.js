@@ -135,9 +135,11 @@
     if (typeof element.focus === "function") element.focus({ preventScroll: true });
     if (typeof PointerEvent === "function") {
       element.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, view: window, pointerType: "mouse", isPrimary: true }));
-      element.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, cancelable: true, view: window, pointerType: "mouse", isPrimary: true }));
     }
     element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window, button: 0 }));
+    if (typeof PointerEvent === "function") {
+      element.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, cancelable: true, view: window, pointerType: "mouse", isPrimary: true }));
+    }
     element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true, view: window, button: 0 }));
     if (typeof element.click === "function") element.click();
     else element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window, button: 0 }));
@@ -210,17 +212,18 @@
   function visibleConfirmButton(scope = document) {
     const candidates = Array.from(scope.querySelectorAll([
       "button", "input[type='button']", "input[type='submit']", "[role='button']",
-      ".phoenix-button", ".button-container", "[class*='button']", "[class*='Button']"
+      ".phoenix-button__wraper", ".phoenix-button", ".button-container", "[class*='button']", "[class*='Button']"
     ].join(","))).filter(candidate => {
       const label = candidate.matches("input") ? candidate.value : textOf(candidate);
       return visible(candidate) && /^(确定|提交|完成|confirm|submit|ok)$/i.test(Core.normalizeText(label));
     });
     const score = candidate => {
+      if (candidate.matches(".phoenix-button__wraper, [class*='button__wraper']")) return 0;
       if (candidate.matches("button, input[type='button'], input[type='submit']")) return 0;
       if (candidate.getAttribute("role") === "button") return 1;
-      if (candidate.matches(".phoenix-button")) return 2;
+      if (candidate.matches(".phoenix-button")) return 4;
       if (candidate.matches(".button-container")) return 3;
-      return 4;
+      return 2;
     };
     return candidates.sort((left, right) => score(left) - score(right))[0] || null;
   }
@@ -271,9 +274,16 @@
     return false;
   }
 
+  let lastCustomFailure = "";
+
+  function customFailure(reason) {
+    lastCustomFailure = reason;
+    return false;
+  }
+
   async function selectBeisenArea(value, areaPanel) {
     const segments = String(value).split(/\s*[/／>＞,，]\s*/).map(part => part.trim()).filter(Boolean);
-    if (!segments.length) return false;
+    if (!segments.length) return customFailure("area-value-empty");
 
     for (let index = 0; index < segments.length; index += 1) {
       const match = await waitForBestOption(
@@ -281,7 +291,7 @@
         segments[index],
         4500
       );
-      if (!match) return false;
+      if (!match) return customFailure(`area-level-${index + 1}-not-found`);
 
       if (index < segments.length - 1) {
         activate(match);
@@ -298,13 +308,14 @@
 
     const confirm = await waitForEnabledConfirm(areaPanel)
       || areaPanel.querySelector(".area-footer-button .button-container:last-child:not([aria-disabled='true'])");
-    if (!confirm) return false;
+    if (!confirm) return customFailure("area-confirm-not-found");
     activate(confirm);
     await wait(420);
     return true;
   }
 
   async function selectCustomOption(element, value) {
+    lastCustomFailure = "";
     const control = customControlFor(element) || element;
     const interactiveCandidates = [
       element,
@@ -319,14 +330,16 @@
     const areaPanel = Array.from(document.querySelectorAll(".area-selector-container")).find(visible);
     if (areaPanel) {
       const selected = await selectBeisenArea(value, areaPanel);
-      return selected && waitForCustomCommit(element, control, value);
+      if (!selected) return false;
+      const committed = await waitForCustomCommit(element, control, value);
+      return committed || customFailure("area-not-committed");
     }
 
     const segments = String(value).split(/\s*[/／>＞]\s*/).map(part => part.trim()).filter(Boolean);
     let lastMatch = null;
     for (const segment of segments.length ? segments : [String(value)]) {
       const match = await waitForBestOption(visibleOptions, segment);
-      if (!match) return false;
+      if (!match) return customFailure("option-not-found");
       lastMatch = match;
       const optionTarget = match.querySelector(
         "input[type='radio'], .icon-container .RadioUnchecked, .icon-container .RadioChecked, .icon-container [class*='RadioUnchecked'], .icon-container [class*='RadioChecked']"
@@ -336,11 +349,12 @@
     }
     if (lastMatch && lastMatch.matches(".phoenix-radio-group__radioItem, .phoenix-radio, .list-item-container")) {
       const confirm = await waitForEnabledConfirm(confirmScopeFor(lastMatch));
-      if (!confirm) return false;
+      if (!confirm) return customFailure("confirm-not-found");
       activate(confirm);
       await wait(420);
     }
-    return waitForCustomCommit(element, control, value);
+    const committed = await waitForCustomCommit(element, control, value);
+    return committed || customFailure("selection-not-committed");
   }
 
   async function applyValue(element, value, primary) {
@@ -389,7 +403,7 @@
 
     if (customControl && (element.readOnly || /select|cascader|combobox|field-search/i.test(`${customControl.className || ""} ${element.getAttribute("role") || ""}`))) {
       const selected = await selectCustomOption(element, value);
-      return { changed: selected, kind: "custom" };
+      return { changed: selected, kind: "custom", reason: selected ? "" : lastCustomFailure };
     }
 
     if (element.readOnly) return { changed: false };
@@ -427,7 +441,7 @@
     const profile = Core.deepMergeWithEmpty(stored.profile);
     const config = Object.assign({ includeSensitive: false, overwrite: false, highlight: true }, options || {});
     const elements = collectControls();
-    const result = { filled: 0, customFilled: 0, skippedExisting: 0, matchedButUnsupported: 0, inspected: elements.length, frame: location.href };
+    const result = { filled: 0, customFilled: 0, skippedExisting: 0, matchedButUnsupported: 0, failures: [], inspected: elements.length, frame: location.href };
     const radioGroups = new Set();
 
     for (const element of elements) {
@@ -454,6 +468,11 @@
         element.dataset.resumeAutofillPath = match.path;
       } else {
         result.matchedButUnsupported += 1;
+        result.failures.push({
+          field: directLabelText(element).replace(/^\s*\*\s*/, "").split("|")[0].trim() || primary.split("|")[0].trim() || "未知字段",
+          path: match.path,
+          reason: outcome.reason || "unsupported"
+        });
       }
     }
     return result;

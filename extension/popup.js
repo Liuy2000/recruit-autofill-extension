@@ -51,15 +51,32 @@
         acc.customFilled += Number(value.customFilled || 0);
         acc.skippedExisting += Number(value.skippedExisting || 0);
         acc.matchedButUnsupported += Number(value.matchedButUnsupported || 0);
+        acc.failures.push(...(Array.isArray(value.failures) ? value.failures : []));
         acc.inspected += Number(value.inspected || 0);
         return acc;
-      }, { filled: 0, customFilled: 0, skippedExisting: 0, matchedButUnsupported: 0, inspected: 0 });
+      }, { filled: 0, customFilled: 0, skippedExisting: 0, matchedButUnsupported: 0, failures: [], inspected: 0 });
+      const reasonText = {
+        "area-value-empty": "地区资料为空",
+        "area-level-1-not-found": "未找到省级选项",
+        "area-level-2-not-found": "未找到市级选项",
+        "area-level-3-not-found": "未找到区县选项",
+        "area-confirm-not-found": "未找到地区确定按钮",
+        "area-not-committed": "地区确认后未写回",
+        "option-not-found": "未找到匹配选项",
+        "confirm-not-found": "未找到确定按钮",
+        "selection-not-committed": "确认后未写回",
+        unsupported: "页面组件不接受填写"
+      };
+      const failures = Array.from(new Map(totals.failures.map(item => [`${item.field}:${item.reason}`, item])).values());
+      const failureSummary = failures.length
+        ? ` 未完成：${failures.slice(0, 5).map(item => `${item.field}（${reasonText[item.reason] || item.reason}）`).join("、")}。`
+        : "";
       if (totals.filled) {
-        result.textContent = `已填写 ${totals.filled} 项${totals.customFilled ? `（含自定义组件 ${totals.customFilled} 项）` : ""}${totals.skippedExisting ? `，保留已有内容 ${totals.skippedExisting} 项` : ""}。请核对后再提交。`;
+        result.textContent = `已填写 ${totals.filled} 项${totals.customFilled ? `（含自定义组件 ${totals.customFilled} 项）` : ""}${totals.skippedExisting ? `，保留已有内容 ${totals.skippedExisting} 项` : ""}。${failureSummary}请核对后再提交。`;
         result.className = "success";
       } else {
         result.textContent = totals.matchedButUnsupported
-          ? `识别到 ${totals.matchedButUnsupported} 个字段，但页面组件暂不接受自动赋值。`
+          ? `识别到 ${totals.matchedButUnsupported} 个字段，但页面组件暂不接受自动赋值。${failureSummary}`
           : totals.inspected ? "未找到可高置信匹配的空白字段。可在设置中补充资料。" : "当前页面没有可访问的表单字段。";
       }
     } catch (error) {

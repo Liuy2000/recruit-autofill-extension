@@ -19,6 +19,7 @@ const { chromium } = require("playwright");
   const first = await page.evaluate(() => globalThis.__resumeAutofillRun({ includeSensitive: false, overwrite: false, highlight: false }));
   assert.ok(first.filled >= 13, `expected at least 13 filled fields, got ${first.filled}`);
   assert.ok(first.customFilled >= 5, `expected custom controls to be filled, got ${first.customFilled}`);
+  assert.deepEqual(first.failures, []);
   assert.equal(await page.locator('[data-test="candidate-name"]').inputValue(), "示例用户");
   assert.equal(await page.locator('[data-test="email"]').inputValue(), "demo@example.com");
   assert.equal(await page.locator('[name="enterpriseGender"]:checked').inputValue(), "男");
