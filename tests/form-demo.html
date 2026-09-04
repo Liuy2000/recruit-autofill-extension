@@ -98,7 +98,7 @@
       <div class="choice-grid-item"><div class="phoenix-radio">回族</div></div>
       <div class="choice-grid-item"><div class="phoenix-radio">蒙古族</div></div>
     </div>
-    <button type="button">取消</button><button type="button" data-choice-confirm>确定</button>
+    <div class="button-container">取消</div><div class="button-container" data-choice-confirm aria-disabled="true">确定</div>
   </div>
   <div class="el-select-dropdown" data-dropdown="political" hidden>
     <div class="el-select-dropdown__item" role="option">群众</div>
@@ -109,7 +109,7 @@
     <div class="area-item-container" data-level="1"><span class="area-text-label">示例省</span></div>
     <div class="area-item-container" data-level="2" hidden><span class="area-text-label">示例市</span></div>
     <div class="area-item-container" data-level="3" hidden><span class="icon-container"><svg class="area-icon-RadioUnchecked" width="12" height="12"></svg></span><span class="area-text-label">示例区</span></div>
-    <div class="area-footer-button"><div class="button-container"><button type="button">取消</button></div><div class="button-container"><button type="button" data-area-confirm>提交</button></div></div>
+    <div class="area-footer-button"><div class="button-container">取消</div><div class="button-container" data-area-confirm aria-disabled="true">提交</div></div>
   </div>
   <div class="phoenix-container__dropdown phoenix-select-dropdown" data-dropdown="education" hidden>
     <ul class="phoenix-single-select-list__ul">
@@ -142,7 +142,10 @@
     ethnicityControl.addEventListener('click', () => { ethnicityDropdown.hidden = false; });
     ethnicityDropdown.addEventListener('click', event => {
       const radio = event.target.closest('.phoenix-radio');
-      if (radio) ethnicityPending = radio.textContent.trim();
+      if (radio) {
+        ethnicityPending = radio.textContent.trim();
+        setTimeout(() => ethnicityDropdown.querySelector('[data-choice-confirm]').removeAttribute('aria-disabled'), 500);
+      }
       if (event.target.closest('[data-choice-confirm]')) {
         ethnicityControl.querySelector('input').value = ethnicityPending;
         ethnicityControl.querySelector('.phoenix-select__placeHolder').textContent = ethnicityPending;
@@ -162,7 +165,10 @@
       }
       if (!item) return;
       const level = Number(item.dataset.level);
-      if (event.target.closest('.icon-container')) householdSelected = true;
+      if (event.target.closest('.icon-container')) {
+        householdSelected = true;
+        setTimeout(() => householdDropdown.querySelector('[data-area-confirm]').removeAttribute('aria-disabled'), 500);
+      }
       const next = householdDropdown.querySelector(`[data-level="${level + 1}"]`);
       if (next) setTimeout(() => { next.hidden = false; }, 650);
     });

@@ -129,6 +129,21 @@
     return new Promise(resolve => setTimeout(resolve, milliseconds));
   }
 
+  function activate(element) {
+    if (!element) return false;
+    element.scrollIntoView({ block: "nearest", inline: "nearest" });
+    if (typeof element.focus === "function") element.focus({ preventScroll: true });
+    if (typeof PointerEvent === "function") {
+      element.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, view: window, pointerType: "mouse", isPrimary: true }));
+      element.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, cancelable: true, view: window, pointerType: "mouse", isPrimary: true }));
+    }
+    element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window, button: 0 }));
+    element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true, view: window, button: 0 }));
+    if (typeof element.click === "function") element.click();
+    else element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window, button: 0 }));
+    return true;
+  }
+
   function customControlFor(element) {
     return element.closest(CUSTOM_CONTAINER_SELECTOR) || element.closest(CUSTOM_CONTROL_SELECTOR);
   }
@@ -193,9 +208,67 @@
   }
 
   function visibleConfirmButton(scope = document) {
-    return Array.from(scope.querySelectorAll("button, [role='button'], .phoenix-button")).filter(visible).find(button =>
-      /^(确定|提交|完成|confirm|submit|ok)$/i.test(Core.normalizeText(textOf(button)))
-    );
+    const candidates = Array.from(scope.querySelectorAll([
+      "button", "input[type='button']", "input[type='submit']", "[role='button']",
+      ".phoenix-button", ".button-container", "[class*='button']", "[class*='Button']"
+    ].join(","))).filter(candidate => {
+      const label = candidate.matches("input") ? candidate.value : textOf(candidate);
+      return visible(candidate) && /^(确定|提交|完成|confirm|submit|ok)$/i.test(Core.normalizeText(label));
+    });
+    const score = candidate => {
+      if (candidate.matches("button, input[type='button'], input[type='submit']")) return 0;
+      if (candidate.getAttribute("role") === "button") return 1;
+      if (candidate.matches(".phoenix-button")) return 2;
+      if (candidate.matches(".button-container")) return 3;
+      return 4;
+    };
+    return candidates.sort((left, right) => score(left) - score(right))[0] || null;
+  }
+
+  async function waitForEnabledConfirm(scope, timeout = 2200) {
+    const deadline = Date.now() + timeout;
+    do {
+      const candidate = visibleConfirmButton(scope);
+      if (candidate && !candidate.disabled && candidate.getAttribute("aria-disabled") !== "true") return candidate;
+      await wait(120);
+    } while (Date.now() < deadline);
+    return null;
+  }
+
+  function confirmScopeFor(node) {
+    let scope = node && node.parentElement;
+    while (scope && scope !== document.body) {
+      if (visibleConfirmButton(scope)) return scope;
+      scope = scope.parentElement;
+    }
+    return document;
+  }
+
+  function customDisplayText(element, control) {
+    const values = [];
+    if (element && "value" in element && element.value) values.push(element.value);
+    if (control) {
+      for (const input of control.querySelectorAll("input, textarea")) {
+        if (input.value) values.push(input.value);
+      }
+      values.push(textOf(control));
+    }
+    return Core.normalizeText(values.join(" "));
+  }
+
+  async function waitForCustomCommit(element, control, value, timeout = 1800) {
+    const segments = String(value).split(/\s*[\/／>＞,，]\s*/).map(part => Core.normalizeText(part)).filter(Boolean);
+    const desired = Core.normalizeText(value);
+    const deadline = Date.now() + timeout;
+    do {
+      const observed = customDisplayText(element, control);
+      if (observed && observed !== "请选择" && (
+        observed.includes(desired)
+        || segments.some(segment => segment && observed.includes(segment))
+      )) return true;
+      await wait(120);
+    } while (Date.now() < deadline);
+    return false;
   }
 
   async function selectBeisenArea(value, areaPanel) {
@@ -211,24 +284,21 @@
       if (!match) return false;
 
       if (index < segments.length - 1) {
-        match.click();
+        activate(match);
       } else {
         const item = match.closest(".area-item-container");
-        const choice = item && item.querySelector(".icon-container [class*='Unchecked'], .icon-container svg, .icon-container > *");
+        const choice = item && item.querySelector("input[type='radio'], .icon-container, [role='radio'], .phoenix-radio");
         const target = choice || match;
-        if (typeof target.click === "function") target.click();
-        else target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+        activate(target);
       }
-      await wait(180);
+      await wait(260);
     }
 
-    const buttons = Array.from(areaPanel.querySelectorAll("button, [role='button'], .phoenix-button")).filter(visible);
-    const confirm = areaPanel.querySelector(".area-footer-button .button-container:last-child button")
-      || visibleConfirmButton(areaPanel)
-      || buttons.find(button => /^(确定|提交|完成|confirm|submit|ok)$/i.test(Core.normalizeText(textOf(button))));
+    const confirm = await waitForEnabledConfirm(areaPanel)
+      || areaPanel.querySelector(".area-footer-button .button-container:last-child:not([aria-disabled='true'])");
     if (!confirm) return false;
-    confirm.click();
-    await wait(220);
+    activate(confirm);
+    await wait(420);
     return true;
   }
 
@@ -241,15 +311,14 @@
       control
     ];
     const clickTarget = interactiveCandidates.find(candidate => candidate && visible(candidate)) || control;
-    if (typeof PointerEvent === "function") {
-      clickTarget.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, view: window, pointerType: "mouse" }));
-    }
-    clickTarget.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
-    clickTarget.click();
-    await wait(220);
+    activate(clickTarget);
+    await wait(320);
 
     const areaPanel = Array.from(document.querySelectorAll(".area-selector-container")).find(visible);
-    if (areaPanel) return selectBeisenArea(value, areaPanel);
+    if (areaPanel) {
+      const selected = await selectBeisenArea(value, areaPanel);
+      return selected && waitForCustomCommit(element, control, value);
+    }
 
     const segments = String(value).split(/\s*[/／>＞]\s*/).map(part => part.trim()).filter(Boolean);
     let lastMatch = null;
@@ -257,22 +326,18 @@
       const match = await waitForBestOption(visibleOptions, segment);
       if (!match) return false;
       lastMatch = match;
-      match.scrollIntoView({ block: "nearest" });
-      if (typeof PointerEvent === "function") {
-        match.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, view: window, pointerType: "mouse" }));
-      }
-      const optionTarget = match.matches(".phoenix-radio") ? match : match.querySelector(".phoenix-radio") || match;
-      optionTarget.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, view: window }));
-      optionTarget.click();
-      await wait(180);
+      const optionTarget = match.querySelector("input[type='radio']")
+        || (match.matches(".phoenix-radio") ? match : match.querySelector(".phoenix-radio") || match);
+      activate(optionTarget);
+      await wait(260);
     }
     if (lastMatch && lastMatch.matches(".phoenix-radio-group__radioItem, .phoenix-radio")) {
-      const confirm = visibleConfirmButton();
+      const confirm = await waitForEnabledConfirm(confirmScopeFor(lastMatch));
       if (!confirm) return false;
-      confirm.click();
-      await wait(220);
+      activate(confirm);
+      await wait(420);
     }
-    return true;
+    return waitForCustomCommit(element, control, value);
   }
 
   async function applyValue(element, value, primary) {
