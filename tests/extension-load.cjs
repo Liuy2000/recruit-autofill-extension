@@ -37,7 +37,7 @@ const profile = require("../fixtures/sample-profile.json");
   const popup = await context.newPage();
   await popup.goto(`chrome-extension://${extensionId}/popup.html`);
   await popup.waitForSelector("#version");
-  assert.equal(await popup.locator("#version").textContent(), "v1.0.6");
+  assert.equal(await popup.locator("#version").textContent(), "v1.0.7");
   await context.close();
   console.log(`extension load test passed (${extensionId})`);
 })().catch(error => {

@@ -92,13 +92,13 @@
     <label>已存在内容（默认不覆盖）<input aria-label="姓名" value="保留此内容"></label>
     <label>简历附件（永不填写）<input type="file"></label>
   </form>
-  <div class="phoenix-choice-panel" data-dropdown="ethnicity" hidden>
-    <div class="phoenix-radio-group">
-      <div class="choice-grid-item"><div class="phoenix-radio">汉族</div></div>
-      <div class="choice-grid-item"><div class="phoenix-radio">回族</div></div>
-      <div class="choice-grid-item"><div class="phoenix-radio">蒙古族</div></div>
+  <div class="constant-main-selector-container phoenix-choice-panel" data-dropdown="ethnicity" hidden>
+    <div class="list-data-container">
+      <div class="list-item-container"><span class="icon-container"><svg class="RadioUnchecked" width="14" height="14"></svg></span><span class="item-text-label">汉族</span></div>
+      <div class="list-item-container"><span class="icon-container"><svg class="RadioUnchecked" width="14" height="14"></svg></span><span class="item-text-label">回族</span></div>
+      <div class="list-item-container"><span class="icon-container"><svg class="RadioUnchecked" width="14" height="14"></svg></span><span class="item-text-label">蒙古族</span></div>
     </div>
-    <div class="button-container">取消</div><div class="button-container" data-choice-confirm aria-disabled="true">确定</div>
+    <div class="selector-footer-button"><div class="button-container">取消</div><div class="button-container" data-choice-confirm aria-disabled="true">确定</div></div>
   </div>
   <div class="el-select-dropdown" data-dropdown="political" hidden>
     <div class="el-select-dropdown__item" role="option">群众</div>
@@ -141,9 +141,11 @@
     let ethnicityPending = '';
     ethnicityControl.addEventListener('click', () => { ethnicityDropdown.hidden = false; });
     ethnicityDropdown.addEventListener('click', event => {
-      const radio = event.target.closest('.phoenix-radio');
-      if (radio) {
-        ethnicityPending = radio.textContent.trim();
+      const radio = event.target.closest('.list-item-container');
+      const selectionIcon = event.target.closest('.RadioUnchecked, .RadioChecked');
+      if (radio && selectionIcon) {
+        ethnicityPending = radio.querySelector('.item-text-label').textContent.trim();
+        selectionIcon.setAttribute('class', 'RadioChecked');
         setTimeout(() => ethnicityDropdown.querySelector('[data-choice-confirm]').removeAttribute('aria-disabled'), 500);
       }
       if (event.target.closest('[data-choice-confirm]')) {
@@ -165,7 +167,7 @@
       }
       if (!item) return;
       const level = Number(item.dataset.level);
-      if (event.target.closest('.icon-container')) {
+      if (event.target.closest('[class*="area-icon-"]')) {
         householdSelected = true;
         setTimeout(() => householdDropdown.querySelector('[data-area-confirm]').removeAttribute('aria-disabled'), 500);
       }

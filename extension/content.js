@@ -179,7 +179,7 @@
       ".ant-cascader-menu-item", ".ivu-select-item", ".arco-select-option",
       ".arco-cascader-option", ".phoenix-single-select-list__item",
       ".phoenix-selectList__listItem", ".phoenix-radio-group__radioItem",
-      ".phoenix-radio",
+      ".phoenix-radio", ".list-item-container", ".lookup-list__item",
       "[role='option']", "[role='menuitemradio']"
     ].join(",");
     return Array.from(document.querySelectorAll(selectors)).filter(option => {
@@ -287,7 +287,9 @@
         activate(match);
       } else {
         const item = match.closest(".area-item-container");
-        const choice = item && item.querySelector("input[type='radio'], .icon-container, [role='radio'], .phoenix-radio");
+        const choice = item && item.querySelector(
+          "input[type='radio'], .icon-container [class*='area-icon-RadioUnchecked'], .icon-container [class*='area-icon-RadioChecked'], .icon-container svg, [role='radio'], .phoenix-radio"
+        );
         const target = choice || match;
         activate(target);
       }
@@ -326,12 +328,13 @@
       const match = await waitForBestOption(visibleOptions, segment);
       if (!match) return false;
       lastMatch = match;
-      const optionTarget = match.querySelector("input[type='radio']")
-        || (match.matches(".phoenix-radio") ? match : match.querySelector(".phoenix-radio") || match);
+      const optionTarget = match.querySelector(
+        "input[type='radio'], .icon-container .RadioUnchecked, .icon-container .RadioChecked, .icon-container [class*='RadioUnchecked'], .icon-container [class*='RadioChecked']"
+      ) || (match.matches(".phoenix-radio") ? match : match.querySelector(".phoenix-radio") || match);
       activate(optionTarget);
       await wait(260);
     }
-    if (lastMatch && lastMatch.matches(".phoenix-radio-group__radioItem, .phoenix-radio")) {
+    if (lastMatch && lastMatch.matches(".phoenix-radio-group__radioItem, .phoenix-radio, .list-item-container")) {
       const confirm = await waitForEnabledConfirm(confirmScopeFor(lastMatch));
       if (!confirm) return false;
       activate(confirm);
